@@ -1,25 +1,14 @@
 const express = require('express');
 const morgan = require('morgan');
-const { graphql, buildSchema } = require('graphql');
 const status = require('http-status');
+
 const { port } = require('./config');
+const graphql = require('./routes/graphql');
 
-const schema = buildSchema(`
-  type Query {
-    hello: String,
-    hola: String
-  }
-`);
-
-const rootValue = {
-  hello: () => 'Hello World',
-  hola: () => 'Hola mundo',
-};
-
+// Starting express app
 const app = express();
 
 app.use(morgan('dev'));
-app.use(express.text());
 
 app.get('/', (req, res) => res.status(status.OK).json({
   name: 'Ecommerce',
@@ -27,12 +16,13 @@ app.get('/', (req, res) => res.status(status.OK).json({
   author: 'Gustavo Eduardo Ordoño Poma',
 }));
 
-app.get('/foo', async (req, res) => {
-  const source = req.body;
-  const result = await graphql({ schema, source, rootValue });
+// Routes
+graphql(app);
 
-  return res.send(result);
-});
+app.all('*', (req, res) => res.status(status.NOT_FOUND).json({
+  success: false,
+  messages: [`Can't find ${req.originalUrl} on this server!`],
+}));
 
 app.listen(port, () => {
   // eslint-disable-next-line
